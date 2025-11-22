@@ -9,7 +9,18 @@ module.exports = {
   
   // Bot Info
   CREATOR: 'Darrell Mucheri (Mr Frank)',
-  BOT_NAME: 'HECTIC DOWNLOADER BOT',
+  BOT_NAME: '𝙃𝙚𝙘𝙩𝙞𝙘 𝘿𝙤𝙬𝙣𝙡𝙤𝙖𝙙𝙚𝙧 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠',
+  
+  // Developer Info
+  DEVELOPER: {
+    name: 'Mr Frank',
+    telegram: 't.me/mrfrankofc',
+    github: 'github.com/mrfr8nk',
+    whatsapp: '+263719647303'
+  },
+  
+  // Start Menu Image
+  START_IMAGE: 'https://dabby.vercel.app/hect.jpg',
   
   // Features
   AUTO_DELETE_TIMEOUT: 60000, // 60 seconds
@@ -19,44 +30,65 @@ module.exports = {
   LOADING_FRAMES: ['⏳', '⌛', '⏳', '⌛'],
   
   // Messages
-  WELCOME_MESSAGE: `🎬 *HECTIC DOWNLOADER BOT* 🎬
+  WELCOME_MESSAGE: `╔═══════════════════════╗
+║  🎬 𝙃𝙚𝙘𝙩𝙞𝙘 𝘿𝙤𝙬𝙣𝙡𝙤𝙖𝙙𝙚𝙧 🎬  ║
+╚═══════════════════════╝
 
-Welcome to the fastest YouTube downloader!
+🌟 *Welcome to the Ultimate YouTube Downloader!*
 
 📥 *How to use:*
-1. Send me a YouTube link OR search query
-2. If searching, reply with the number (1-10)
-3. Choose your preferred quality
-4. Download instantly!
+━━━━━━━━━━━━━━━━━━━━
+1️⃣ Send me a YouTube link OR search query
+2️⃣ If searching, reply with the number (1-10)
+3️⃣ Choose your preferred quality
+4️⃣ Media sent directly to Telegram!
 
 ✨ *Features:*
-• YouTube search with top 10 results
-• Multiple video qualities (144p - 1080p)
-• Audio-only downloads (MP3)
-• Fast and reliable
-• Auto-cleanup messages
+━━━━━━━━━━━━━━━━━━━━
+🔍 YouTube search with top 10 results
+🎥 Multiple video qualities (144p - 1080p)
+🎵 Audio-only downloads (MP3)
+⚡ Fast and reliable
+🧹 Auto-cleanup messages
 
-👨‍💻 *Created by:* Darrell Mucheri (Mr Frank)
+📱 *Commands:*
+━━━━━━━━━━━━━━━━━━━━
+/help - Show help menu
+/developer - Developer contact info
+/uptime - Bot uptime status
+/users - User statistics
+/system - System information
+
+👨‍💻 *Created by:* 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠
 
 Send me a YouTube link or search query to get started! 🚀`,
 
-  HELP_MESSAGE: `📖 *HECTIC DOWNLOADER BOT - Help*
+  HELP_MESSAGE: `╔═══════════════════════╗
+║    📖 𝙃𝙚𝙡𝙥 𝙈𝙚𝙣𝙪    ║
+╚═══════════════════════╝
 
-*Commands:*
+*Available Commands:*
+━━━━━━━━━━━━━━━━━━━━
 /start - Start the bot
 /help - Show this help message
+/developer - Developer contact info
+/uptime - Check bot uptime
+/users - View user statistics
+/system - System information
 
 *How to download:*
-1. Send a YouTube URL or search query
-2. If searching, choose from top 10 results
-3. Select your preferred quality
-4. Click 'Download Now' to get your file
+━━━━━━━━━━━━━━━━━━━━
+1️⃣ Send a YouTube URL or search query
+2️⃣ If searching, choose from top 10 results
+3️⃣ Select your preferred quality
+4️⃣ Media sent directly to Telegram!
 
 *Supported formats:*
+━━━━━━━━━━━━━━━━━━━━
 🎵 Audio: MP3
 📹 Video: 144p, 240p, 360p, 480p, 720p, 1080p
 
-*Note:* Messages auto-delete after 60 seconds!
+⚠️ *Note:* Messages auto-delete after 60 seconds!
 
-👨‍💻 *Created by:* Darrell Mucheri (Mr Frank)`
+👨‍💻 *Created by:* 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠`
 };

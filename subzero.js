@@ -10,6 +10,15 @@ const bot = new TelegramBot(config.BOT_TOKEN, { polling: true });
 const userStates = new Map();
 const videoDataCache = new Map(); // Cache for video download URLs
 
+// Bot statistics
+const botStartTime = Date.now();
+const userList = new Set();
+
+// Track users
+const trackUser = (userId) => {
+  userList.add(userId);
+};
+
 // Utility Functions
 const isYouTubeUrl = (text) => {
   return text.includes('youtube.com') || text.includes('youtu.be');
@@ -179,12 +188,133 @@ const sendMediaToTelegram = async (chatId, downloadUrl, type, quality, videoData
 // Command Handlers
 bot.onText(/\/start/, async (msg) => {
   const chatId = msg.chat.id;
-  await bot.sendMessage(chatId, config.WELCOME_MESSAGE, { parse_mode: 'Markdown' });
+  trackUser(msg.from.id);
+  
+  try {
+    await bot.sendPhoto(chatId, config.START_IMAGE, {
+      caption: config.WELCOME_MESSAGE,
+      parse_mode: 'Markdown'
+    });
+  } catch (error) {
+    // Fallback to text if image fails
+    await bot.sendMessage(chatId, config.WELCOME_MESSAGE, { parse_mode: 'Markdown' });
+  }
 });
 
 bot.onText(/\/help/, async (msg) => {
   const chatId = msg.chat.id;
+  trackUser(msg.from.id);
   await bot.sendMessage(chatId, config.HELP_MESSAGE, { parse_mode: 'Markdown' });
+});
+
+bot.onText(/\/developer/, async (msg) => {
+  const chatId = msg.chat.id;
+  trackUser(msg.from.id);
+  
+  const devInfo = `╔═══════════════════════╗
+║   👨‍💻 𝘿𝙚𝙫𝙚𝙡𝙤𝙥𝙚𝙧 𝙄𝙣𝙛𝙤   ║
+╚═══════════════════════╝
+
+*Developer:* ${config.DEVELOPER.name}
+
+📱 *Telegram:* ${config.DEVELOPER.telegram}
+💻 *GitHub:* ${config.DEVELOPER.github}
+📞 *WhatsApp:* ${config.DEVELOPER.whatsapp}
+
+Feel free to reach out for support or feedback!`;
+
+  await bot.sendMessage(chatId, devInfo, { parse_mode: 'Markdown' });
+});
+
+bot.onText(/\/uptime/, async (msg) => {
+  const chatId = msg.chat.id;
+  trackUser(msg.from.id);
+  
+  const uptime = Date.now() - botStartTime;
+  const seconds = Math.floor(uptime / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+  
+  const uptimeStr = `${days}d ${hours % 24}h ${minutes % 60}m ${seconds % 60}s`;
+  
+  const uptimeMsg = `╔═══════════════════════╗
+║    ⏱️ 𝘽𝙤𝙩 𝙐𝙥𝙩𝙞𝙢𝙚    ║
+╚═══════════════════════╝
+
+🟢 *Status:* Online
+⏰ *Uptime:* ${uptimeStr}
+🚀 *Started:* ${new Date(botStartTime).toLocaleString()}
+
+The bot is running smoothly!`;
+
+  await bot.sendMessage(chatId, uptimeMsg, { parse_mode: 'Markdown' });
+});
+
+bot.onText(/\/users/, async (msg) => {
+  const chatId = msg.chat.id;
+  trackUser(msg.from.id);
+  
+  const totalUsers = userList.size;
+  const userIds = Array.from(userList).slice(0, 10);
+  
+  let userListStr = '';
+  userIds.forEach((id, index) => {
+    userListStr += `${index + 1}. User ID: ${id}\n`;
+  });
+  
+  if (totalUsers > 10) {
+    userListStr += `\n...and ${totalUsers - 10} more users`;
+  }
+  
+  const usersMsg = `╔═══════════════════════╗
+║   👥 𝙐𝙨𝙚𝙧 𝙎𝙩𝙖𝙩𝙞𝙨𝙩𝙞𝙘𝙨   ║
+╚═══════════════════════╝
+
+📊 *Total Users:* ${totalUsers}
+
+*Recent Users:*
+${userListStr}
+
+Thank you for using ${config.BOT_NAME}! 🎉`;
+
+  await bot.sendMessage(chatId, usersMsg, { parse_mode: 'Markdown' });
+});
+
+bot.onText(/\/system/, async (msg) => {
+  const chatId = msg.chat.id;
+  trackUser(msg.from.id);
+  
+  const memUsage = process.memoryUsage();
+  const ramUsed = (memUsage.heapUsed / 1024 / 1024).toFixed(2);
+  const ramTotal = (memUsage.heapTotal / 1024 / 1024).toFixed(2);
+  const ramPercent = ((memUsage.heapUsed / memUsage.heapTotal) * 100).toFixed(1);
+  
+  // Measure ping
+  const start = Date.now();
+  await bot.sendChatAction(chatId, 'typing');
+  const ping = Date.now() - start;
+  
+  const uptime = Date.now() - botStartTime;
+  const seconds = Math.floor(uptime / 1000);
+  const hours = Math.floor(seconds / 3600);
+  
+  const systemMsg = `╔═══════════════════════╗
+║   💻 𝙎𝙮𝙨𝙩𝙚𝙢 𝙄𝙣𝙛𝙤   ║
+╚═══════════════════════╝
+
+🖥️ *RAM Usage:* ${ramUsed} MB / ${ramTotal} MB (${ramPercent}%)
+📊 *Memory Percent:* ${ramPercent}%
+⚡ *Ping:* ${ping}ms
+⏱️ *Uptime:* ${hours}h ${Math.floor((seconds % 3600) / 60)}m
+🔢 *Active Caches:* ${videoDataCache.size}
+👥 *Total Users:* ${userList.size}
+⚙️ *Node Version:* ${process.version}
+🌐 *Platform:* ${process.platform}
+
+System running optimally! ✅`;
+
+  await bot.sendMessage(chatId, systemMsg, { parse_mode: 'Markdown' });
 });
 
 // Handle text messages (URLs or search queries)
@@ -194,6 +324,7 @@ bot.on('message', async (msg) => {
     
     const chatId = msg.chat.id;
     const text = msg.text.trim();
+    trackUser(msg.from.id);
   
   // Check if user is in selection mode
   const userState = userStates.get(chatId);
@@ -348,9 +479,28 @@ const processSearch = async (chatId, query, originalMsgId) => {
   resultText += `💬 Reply with number (1-${results.length})\n\n`;
   resultText += `👨‍💻 *${config.BOT_NAME}*`;
   
-  const searchMsg = await bot.sendMessage(chatId, resultText, {
-    parse_mode: 'Markdown'
-  });
+  // Try to send with thumbnail of top result
+  let searchMsg;
+  const topResult = results[0];
+  const thumbnail = topResult.thumbnail?.thumbnails?.[0]?.url;
+  
+  if (thumbnail) {
+    try {
+      searchMsg = await bot.sendPhoto(chatId, thumbnail, {
+        caption: resultText,
+        parse_mode: 'Markdown'
+      });
+    } catch (error) {
+      // Fallback to text if thumbnail fails
+      searchMsg = await bot.sendMessage(chatId, resultText, {
+        parse_mode: 'Markdown'
+      });
+    }
+  } else {
+    searchMsg = await bot.sendMessage(chatId, resultText, {
+      parse_mode: 'Markdown'
+    });
+  }
   
   // Store search results and await user selection
   userStates.set(chatId, {
@@ -463,5 +613,6 @@ bot.on('polling_error', (error) => {
   console.error('Polling error:', error.message);
 });
 
-console.log('🚀 HECTIC DOWNLOADER BOT is running...');
+console.log('🚀 𝙃𝙚𝙘𝙩𝙞𝙘 𝘿𝙤𝙬𝙣𝙡𝙤𝙖𝙙𝙚𝙧 is running...');
 console.log('👨‍💻 Created by:', config.CREATOR);
+console.log('📊 Bot started at:', new Date().toLocaleString());
