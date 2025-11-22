@@ -6,8 +6,9 @@ const config = require('./config');
 // Create bot instance
 const bot = new TelegramBot(config.BOT_TOKEN, { polling: true });
 
-// Store user states
+// Store user states and video data
 const userStates = new Map();
+const videoDataCache = new Map(); // Cache for video download URLs
 
 // Utility Functions
 const isYouTubeUrl = (text) => {
@@ -86,14 +87,14 @@ const searchYouTube = async (query) => {
 };
 
 // Create quality keyboard
-const createQualityKeyboard = (videoData) => {
+const createQualityKeyboard = (videoData, cacheId) => {
   const keyboard = [];
   
   // Audio option
   if (videoData.audio) {
     keyboard.push([{
       text: '🎵 Audio (MP3)',
-      callback_data: `audio|${videoData.audio}`
+      callback_data: `audio|${cacheId}`
     }]);
   }
   
@@ -106,7 +107,7 @@ const createQualityKeyboard = (videoData) => {
     if (videos[quality]) {
       videoButtons.push({
         text: `📹 ${quality}p`,
-        callback_data: `video|${quality}|${videos[quality]}`
+        callback_data: `video|${quality}|${cacheId}`
       });
     }
   }
@@ -217,6 +218,15 @@ Could not fetch video information. Please check:
   // Delete loading message
   await bot.deleteMessage(chatId, loadingMsg.message_id);
   
+  // Generate a unique cache ID and store video data
+  const cacheId = `${chatId}_${Date.now()}`;
+  videoDataCache.set(cacheId, videoData);
+  
+  // Auto-clean cache after 5 minutes
+  setTimeout(() => {
+    videoDataCache.delete(cacheId);
+  }, 300000);
+  
   // Send video info with quality options
   const caption = `📹 *${videoData.title}*
 
@@ -230,18 +240,18 @@ Could not fetch video information. Please check:
       selectionMsg = await bot.sendPhoto(chatId, videoData.thumbnail, {
         caption,
         parse_mode: 'Markdown',
-        reply_markup: createQualityKeyboard(videoData)
+        reply_markup: createQualityKeyboard(videoData, cacheId)
       });
     } catch (error) {
       selectionMsg = await bot.sendMessage(chatId, caption, {
         parse_mode: 'Markdown',
-        reply_markup: createQualityKeyboard(videoData)
+        reply_markup: createQualityKeyboard(videoData, cacheId)
       });
     }
   } else {
     selectionMsg = await bot.sendMessage(chatId, caption, {
       parse_mode: 'Markdown',
-      reply_markup: createQualityKeyboard(videoData)
+      reply_markup: createQualityKeyboard(videoData, cacheId)
     });
   }
   
@@ -347,17 +357,27 @@ bot.on('callback_query', async (query) => {
   }
   
   // Parse download data
-  const firstPipe = data.indexOf('|');
-  const downloadType = data.substring(0, firstPipe);
+  const parts = data.split('|');
+  const downloadType = parts[0];
+  const cacheId = parts[parts.length - 1];
+  
+  // Retrieve video data from cache
+  const videoData = videoDataCache.get(cacheId);
+  if (!videoData) {
+    await bot.answerCallbackQuery(query.id, {
+      text: '❌ Session expired. Please send the link again.',
+      show_alert: true
+    });
+    return;
+  }
   
   let downloadUrl, qualityText;
   if (downloadType === 'audio') {
-    downloadUrl = data.substring(firstPipe + 1);
+    downloadUrl = videoData.audio;
     qualityText = 'Audio (MP3)';
   } else {
-    const secondPipe = data.indexOf('|', firstPipe + 1);
-    const quality = data.substring(firstPipe + 1, secondPipe);
-    downloadUrl = data.substring(secondPipe + 1);
+    const quality = parts[1];
+    downloadUrl = videoData.videos[quality];
     qualityText = `Video (${quality}p)`;
   }
   
