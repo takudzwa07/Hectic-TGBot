@@ -147,13 +147,46 @@ const scheduleDelete = async (chatId, messageIds, timeout = config.AUTO_DELETE_T
 
 // Download and send media directly to Telegram
 const sendMediaToTelegram = async (chatId, downloadUrl, type, quality, videoData) => {
-  const uploadMsg = await bot.sendMessage(chatId, '⬆️ Uploading to Telegram...');
+  const progressMsg = await bot.sendMessage(chatId, `📥 *Downloading...*\n\n${videoData.title}\n\n⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜ 0%`, {
+    parse_mode: 'Markdown'
+  });
   
   try {
     const response = await axios.get(downloadUrl, {
       responseType: 'stream',
-      timeout: 120000
+      timeout: 120000,
+      onDownloadProgress: (progressEvent) => {
+        if (progressEvent.total) {
+          const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          const filledBlocks = Math.floor(percentCompleted / 10);
+          const emptyBlocks = 10 - filledBlocks;
+          const progressBar = '🟦'.repeat(filledBlocks) + '⬜'.repeat(emptyBlocks);
+          
+          // Animate with different emojis
+          const loadingEmojis = ['📥', '📦', '📤', '🎬'];
+          const emoji = loadingEmojis[Math.floor(percentCompleted / 25)];
+          
+          bot.editMessageText(
+            `${emoji} *Downloading...*\n\n${videoData.title}\n\n${progressBar} ${percentCompleted}%`,
+            {
+              chat_id: chatId,
+              message_id: progressMsg.message_id,
+              parse_mode: 'Markdown'
+            }
+          ).catch(() => {}); // Ignore errors from too frequent updates
+        }
+      }
     });
+    
+    // Update to uploading status
+    await bot.editMessageText(
+      `⬆️ *Uploading to Telegram...*\n\n${videoData.title}\n\n🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦 100%`,
+      {
+        chat_id: chatId,
+        message_id: progressMsg.message_id,
+        parse_mode: 'Markdown'
+      }
+    ).catch(() => {});
     
     const caption = `📹 *${videoData.title}*\n\n👨‍💻 *${config.BOT_NAME}*`;
     
@@ -172,15 +205,15 @@ const sendMediaToTelegram = async (chatId, downloadUrl, type, quality, videoData
       });
     }
     
-    await bot.deleteMessage(chatId, uploadMsg.message_id);
+    await bot.deleteMessage(chatId, progressMsg.message_id);
     return true;
   } catch (error) {
     console.error('Error uploading to Telegram:', error.message);
     await bot.editMessageText(
       '❌ File too large for Telegram or upload failed. Use download link instead.',
-      { chat_id: chatId, message_id: uploadMsg.message_id }
+      { chat_id: chatId, message_id: progressMsg.message_id }
     );
-    setTimeout(() => bot.deleteMessage(chatId, uploadMsg.message_id).catch(() => {}), 5000);
+    setTimeout(() => bot.deleteMessage(chatId, progressMsg.message_id).catch(() => {}), 5000);
     return false;
   }
 };
