@@ -148,10 +148,11 @@ bot.onText(/\/help/, async (msg) => {
 
 // Handle text messages (URLs or search queries)
 bot.on('message', async (msg) => {
-  if (!msg.text || msg.text.startsWith('/')) return;
-  
-  const chatId = msg.chat.id;
-  const text = msg.text.trim();
+  try {
+    if (!msg.text || msg.text.startsWith('/')) return;
+    
+    const chatId = msg.chat.id;
+    const text = msg.text.trim();
   
   // Check if user is in selection mode
   const userState = userStates.get(chatId);
@@ -180,6 +181,10 @@ bot.on('message', async (msg) => {
   } else {
     // It's a search query
     await processSearch(chatId, text, msg.message_id);
+  }
+  } catch (error) {
+    console.error('Error processing message:', error);
+    await bot.sendMessage(msg.chat.id, '❌ An error occurred while processing your request. Please try again.');
   }
 });
 
@@ -300,10 +305,11 @@ const processSearch = async (chatId, query, originalMsgId) => {
 
 // Handle callback queries
 bot.on('callback_query', async (query) => {
-  const chatId = query.message.chat.id;
-  const data = query.data;
-  
-  await bot.answerCallbackQuery(query.id);
+  try {
+    const chatId = query.message.chat.id;
+    const data = query.data;
+    
+    await bot.answerCallbackQuery(query.id);
   
   if (data === 'cancel') {
     await bot.editMessageText('❌ Download cancelled.', {
@@ -341,16 +347,17 @@ bot.on('callback_query', async (query) => {
   }
   
   // Parse download data
-  const parts = data.split('|');
-  const downloadType = parts[0];
+  const firstPipe = data.indexOf('|');
+  const downloadType = data.substring(0, firstPipe);
   
   let downloadUrl, qualityText;
   if (downloadType === 'audio') {
-    downloadUrl = parts[1];
+    downloadUrl = data.substring(firstPipe + 1);
     qualityText = 'Audio (MP3)';
   } else {
-    const quality = parts[1];
-    downloadUrl = parts[2];
+    const secondPipe = data.indexOf('|', firstPipe + 1);
+    const quality = data.substring(firstPipe + 1, secondPipe);
+    downloadUrl = data.substring(secondPipe + 1);
     qualityText = `Video (${quality}p)`;
   }
   
@@ -398,6 +405,13 @@ _This message will auto-delete in 60 seconds_
     scheduleDelete(chatId, [...userState.messagesToDelete, query.message.message_id]);
   } else {
     scheduleDelete(chatId, [query.message.message_id]);
+  }
+  } catch (error) {
+    console.error('Error in callback query handler:', error);
+    await bot.answerCallbackQuery(query.id, {
+      text: '❌ An error occurred. Please try again.',
+      show_alert: true
+    });
   }
 });
 
