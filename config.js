@@ -2,7 +2,7 @@ require('dotenv').config();
 
 module.exports = {
   // Bot Configuration
-  BOT_TOKEN: process.env.BOT_TOKEN || 'your_telegram_bot_token_here',
+  BOT_TOKEN: process.env.BOT_TOKEN || '8579217430:AAEcglCDYIrH9nqb-aBuz5A9Q_HjuXKAGUQ',
   
   // API Configuration
   API_URL: 'https://yt-dl.officialhectormanuel.workers.dev/',
